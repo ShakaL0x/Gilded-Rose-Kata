@@ -230,4 +230,20 @@ describe('Gilded Rose', () => {
     
     expect(everyItemQualityIs80).to.be.true
   })
+
+  /* ------ Aged Brie ------ */
+
+  it('"Aged Brie" increases in `Quality` by 2', () => {
+    const items = [
+      new Item("Aged Brie", -1, 0), //
+    ] //
+
+    const gildedRose = new GildedRose(clone(items)); // clones items to not pass references
+
+    const itemsFromGildedRose = gildedRose.items; // gets reference that updates on update()
+
+    gildedRose.updateItems()
+    
+    expect(itemsFromGildedRose[0].quality).to.be.eq(items[0].quality + 1)
+  })
 });
