@@ -32,23 +32,25 @@ export class GildedRose {
 
   // Wraps all quality parameter updates
   private updateQuality(item: Item) { 
-    let standardChange = -1
-    let change = standardChange
-    
-    if      (item.name === 'Backstage passes to a TAFKAL80ETC concert') change = this.getTicketQualityChange(item)
-    else if (item.name === 'Sulfuras, Hand of Ragnaros') return
-    else if (item.name === 'Aged Brie') change = +1
-    else    {
-      const isExpired = item.sellIn <= 0
-      const isConjured = item.name === 'Conjured Mana Cake'
-  
-      let decrease = isExpired? standardChange * 2 : standardChange
-      decrease *= isConjured? 2 : 1
-  
-      change = decrease
-    }
+    const change = this.getQualityChange(item)
+
+    // Protects Sulfuras from rewriting it's quality
+    if (change == 0) return
 
     this.changeQuality(item, change)
+  }
+
+  private getQualityChange(item: Item): number {
+    const isExpired = item.sellIn <= 0
+    
+    const changeDictionary = {
+      'Backstage passes to a TAFKAL80ETC concert': this.getTicketQualityChange(item),
+      'Sulfuras, Hand of Ragnaros': 0,
+      'Aged Brie': +1,
+      'Conjured Mana Cake': isExpired? -4 : -2
+    }
+    
+    return changeDictionary[item.name] ?? (isExpired? -2 : -1)
   }
 
   private getTicketQualityChange(item: Item) {
@@ -58,11 +60,11 @@ export class GildedRose {
     else if (item.sellIn <= 5) return +3
     // Concert is close
     else if (item.sellIn <= 10) return +2
-    
+    // Concert became a little close
     return +1
   }
 
-  // Updates quality with overflow/underflow protection
+  // Changes quality with overflow/underflow protection
   private changeQuality(item: Item, change: number) {
     item.quality += change
 

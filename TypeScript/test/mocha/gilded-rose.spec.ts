@@ -249,7 +249,7 @@ describe('Gilded Rose', () => {
 
   /* ------ Aged Brie ------ */
 
-  it('"Aged Brie" increases in `Quality` by 2', () => {
+  it('"Aged Brie" increases in `Quality` by 1', () => {
     const items = [
       new Item("Aged Brie", -1, 0), //
     ] //
