@@ -14,10 +14,6 @@ const fullItemList = [
   new Item("Conjured Mana Cake", 3, 6)
 ];
 
-function findItemsInGildedRose(gildedRose: GildedRose, nameToFind: string): Item[] {
-  return gildedRose.items.filter(item => item.name === nameToFind)
-}
-
 function clone<T>(object: T): T {
   return JSON.parse(JSON.stringify(object))
 }
@@ -56,7 +52,7 @@ describe('Gilded Rose', () => {
 
     const itemsFromGildedRose = gildedRose.items;
 
-    gildedRose.updateQuality()
+    gildedRose.updateItems()
     
     itemsFromGildedRose.forEach((item, index) => {
       expect(item.quality).to.be.lessThan(items[index].quality)
@@ -80,46 +76,158 @@ describe('Gilded Rose', () => {
     const itemsFromGildedRose = gildedRose.items;
 
 
-    gildedRose.updateQuality()
+    gildedRose.updateItems()
     
     const qualityAfterFirstUpdate = itemsFromGildedRose[0].quality
     const qualityDecreaseByDayBeforeSell = items[0].quality - qualityAfterFirstUpdate
 
-    gildedRose.updateQuality()
+    gildedRose.updateItems()
 
     let qualityDecreaseByDayAfterSell = qualityAfterFirstUpdate - itemsFromGildedRose[0].quality
 
     expect(qualityDecreaseByDayAfterSell).to.eq(qualityDecreaseByDayBeforeSell * 2)
   })
 
-  it('Quality of an item is never negative', () => {
-    const items = fullItemList
+  it('Quality of an item is in [0, 50] range, besides Sulfuras', () => {
+    const items = [
+      new Item("+5 Dexterity Vest", 10, 20), //
+      new Item("Aged Brie", 2, 0), //
+      new Item("Elixir of the Mongoose", 5, 7), //
+      // Sulfuras are exceptional and it's quality is always 80
+      // new Item("Sulfuras, Hand of Ragnaros", 0, 80), //
+      // new Item("Sulfuras, Hand of Ragnaros", -1, 80),
+      new Item("Backstage passes to a TAFKAL80ETC concert", 15, 20),
+      new Item("Backstage passes to a TAFKAL80ETC concert", 10, 49),
+      new Item("Backstage passes to a TAFKAL80ETC concert", 5, 49),
+      // this conjured item does not work properly yet
+      new Item("Conjured Mana Cake", 3, 6)
+    ]
 
     const gildedRose = new GildedRose(clone(items)); // clones items to not pass references
 
     const itemsFromGildedRose = gildedRose.items; // gets reference that updates on update()
 
-    
-
-    gildedRose.updateQuality()
-
+    for (let i = 0; i < 100; i++) {
+      gildedRose.updateItems()
+      const everyItemQualityIsInRange = itemsFromGildedRose.every(item => item.quality >= 0 && item.quality <= 50)
+      expect(everyItemQualityIsInRange).to.be.true
+    }
   })
-  it('Aged Brie increases in quality the older it gets', () => {})
+
+  it('Aged Brie increases in quality the older it gets', () => {
+    const items = [
+      new Item("Aged Brie", 2, 0)
+    ] //
+
+    const gildedRose = new GildedRose(clone(items)); // clones items to not pass references
+
+    const itemsFromGildedRose = gildedRose.items; // gets reference that updates on update()
+
+    gildedRose.updateItems()
+    
+    expect(itemsFromGildedRose[0].quality).to.be.gt(items[0].quality)
+  })
   
   /* ------ Sulfuras ------ */
 
-  it('"Sulfuras", being a legendary item, never has to be sold', () => {})
+  it('"Sulfuras", being a legendary item, never has to be sold', () => {
+    const items = [
+      new Item("Sulfuras, Hand of Ragnaros", 10, 80),
+      new Item("Sulfuras, Hand of Ragnaros", 0, 80),
+      new Item("Sulfuras, Hand of Ragnaros", -10, 80),
+    ] //
+
+    const gildedRose = new GildedRose(clone(items)); // clones items to not pass references
+
+    const itemsFromGildedRose = gildedRose.items; // gets reference that updates on update()
+
+    gildedRose.updateItems()
+    
+    const itemHasSameSellInDays = (item: Item, index: number) => item.quality === items[index].quality
+    const everyItemHasSameSellInDays = itemsFromGildedRose.every(itemHasSameSellInDays)
+    
+    expect(everyItemHasSameSellInDays).to.be.true
+  })
 
   /* ------ Backstage Passes ------ */
 
   // "Backstage passes", like aged brie, increases in Quality as its SellIn value approaches;
-  it('For "Backstage Passes" `Quality` increases by 2 when there are 10 days or less and by 3 when there are 5 days or less but', () => {})
-  it('Quality drops to 0 after the concert', () => {})
+
+  it('"Backstage Passes" increases in `Quality`', () => {
+    const items = [
+      new Item("Backstage passes to a TAFKAL80ETC concert", 15, 20),
+    ] //
+
+    const gildedRose = new GildedRose(clone(items)); // clones items to not pass references
+
+    const itemsFromGildedRose = gildedRose.items; // gets reference that updates on update()
+
+    gildedRose.updateItems()
+    
+    expect(itemsFromGildedRose[0].quality).to.be.gt(items[0].quality)
+  })
+
+  it('For "Backstage Passes" `Quality` increases by 2 when there are 10 days or less and by 3 when there are 5 days or less', () => {
+    const items = [
+      new Item("Backstage passes to a TAFKAL80ETC concert", 10, 20),
+    ] //
+
+    const gildedRose = new GildedRose(clone(items)); // clones items to not pass references
+
+    const itemsFromGildedRose = gildedRose.items; // gets reference that updates on update()
+
+    // Quality increase by 2 when it's 10 or less days before concert
+    while (itemsFromGildedRose[0].sellIn <= 10 && itemsFromGildedRose[0].sellIn > 5) {
+      const qualityBefore = itemsFromGildedRose[0].quality
+      
+      gildedRose.updateItems()
+
+      const qualityAfter = itemsFromGildedRose[0].quality
+      expect(qualityAfter).to.be.eq(qualityBefore + 2)
+    }
+
+    // Quality increase by 3 when it's 5 or less days before concert
+    while (itemsFromGildedRose[0].sellIn <= 5 && itemsFromGildedRose[0].sellIn > 0) {
+      const qualityBefore = itemsFromGildedRose[0].quality
+
+      gildedRose.updateItems()
+
+      const qualityAfter = itemsFromGildedRose[0].quality
+      expect(qualityAfter).to.be.eq(qualityBefore + 3)
+    }
+  })
+  
+  it('For "Backstage Passes" `Quality` drops to 0 after the concert', () => {
+    const items = [
+      new Item("Backstage passes to a TAFKAL80ETC concert", 15, 20),
+    ] //
+
+    const gildedRose = new GildedRose(clone(items)); // clones items to not pass references
+
+    const itemsFromGildedRose = gildedRose.items; // gets reference that updates on update()
+
+    while (itemsFromGildedRose[0].sellIn >= 0) {
+      gildedRose.updateItems()
+    }
+    
+    expect(itemsFromGildedRose[0].quality).to.be.eq(0)
+  })
   
   /* ------ Quality Assurance ------ */
   
-  it('Quality of an item is never more than 50', () => {})
-  it('Quality of an item is never more than 50 for Aged Brie', () => {})
-  it('"Sulfuras", being a legendary item, never decreases in Quality', () => {})
-  it('"Sulfuras", being a legendary item, has `Quality` equal 80', () => {})
+  it('"Sulfuras", being a legendary item, always has Quality equal 80', () => {
+    const items = [
+      new Item("Sulfuras, Hand of Ragnaros", 0, 80), //
+      new Item("Sulfuras, Hand of Ragnaros", -1, 80),
+    ]
+
+    const gildedRose = new GildedRose(clone(items)); // clones items to not pass references
+
+    const itemsFromGildedRose = gildedRose.items; // gets reference that updates on update()
+
+    gildedRose.updateItems()
+    const everyItemQualityIs80 = itemsFromGildedRose.every(item => item.quality === 80)
+    
+    expect(everyItemQualityIs80).to.be.true
+  })
 });
