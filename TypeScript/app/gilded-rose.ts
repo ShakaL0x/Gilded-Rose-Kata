@@ -1,3 +1,12 @@
+enum ExceptionalItems {
+  // Sulfuras is a legendary item that doesn't age or change in quality, 
+  // it always have 80 quality
+  sulfuras = 'Sulfuras, Hand of Ragnaros',
+  conjured = 'Conjured Mana Cake',
+  backstagePass = 'Backstage passes to a TAFKAL80ETC concert',
+  brie = 'Aged Brie'
+}
+
 export class Item {
   name: string;
   sellIn: number;
@@ -33,27 +42,23 @@ export class GildedRose {
   // Wraps all quality parameter updates
   private updateQuality(item: Item) { 
     const change = this.getQualityChange(item)
-
-    // Protects Sulfuras from rewriting it's quality
-    if (change == 0) return
-
     this.changeQuality(item, change)
   }
 
   private getQualityChange(item: Item): number {
     const isExpired = item.sellIn <= 0
     
-    const changeDictionary = {
-      'Backstage passes to a TAFKAL80ETC concert': this.getTicketQualityChange(item),
-      'Sulfuras, Hand of Ragnaros': 0,
-      'Aged Brie': +1,
-      'Conjured Mana Cake': isExpired? -4 : -2
+    const exceptionalItemsChangeDictionary = {
+      [ExceptionalItems.backstagePass]: this.getBackstagePassQualityChange(item),
+      [ExceptionalItems.sulfuras]: 0,
+      [ExceptionalItems.brie]: +1,
+      [ExceptionalItems.conjured]: isExpired? -4 : -2
     }
     
-    return changeDictionary[item.name] ?? (isExpired? -2 : -1)
+    return exceptionalItemsChangeDictionary[item.name] ?? (isExpired? -2 : -1)
   }
 
-  private getTicketQualityChange(item: Item) {
+  private getBackstagePassQualityChange(item: Item) {
     // Concert passed
     if (item.sellIn <= 0) return -item.quality
     // Concert is very close
@@ -66,6 +71,8 @@ export class GildedRose {
 
   // Changes quality with overflow/underflow protection
   private changeQuality(item: Item, change: number) {
+    if (item.name === ExceptionalItems.sulfuras) return item.quality = 80
+    
     item.quality += change
 
     // Overflow/underflow protection
@@ -75,7 +82,7 @@ export class GildedRose {
 
   private updateSellInDays(item: Item) {
     // Sulfuras is a legendary item that doesn't age
-    if (item.name == 'Sulfuras, Hand of Ragnaros') return
+    if (item.name === ExceptionalItems.sulfuras) return
 
     item.sellIn = item.sellIn - 1;
   }
