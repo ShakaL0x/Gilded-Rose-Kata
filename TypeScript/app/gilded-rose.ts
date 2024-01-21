@@ -26,43 +26,49 @@ export class GildedRose {
   }
 
   private updateItem(item: Item) {
-    switch(item.name) {
-      case 'Aged Brie':
-        this.increaseQuality(item)
-        break
-      case 'Backstage passes to a TAFKAL80ETC concert':
-        this.updateTicketQuality(item)
-        break
-      case 'Sulfuras, Hand of Ragnaros':
-        break
-      default:
-        this.decreaseQuality(item)
-    }
-
+    this.updateQuality(item)
     this.updateSellInDays(item)
   }
 
-  private updateSellInDays(item: Item) {
-    // Sulfuras doesn't age
-    if (item.name == 'Sulfuras, Hand of Ragnaros') return
+  // Quality update protected from overflows/underflows
+  private changeQuality(item: Item, change: number) {    
+    item.quality += change
 
-    item.sellIn = item.sellIn - 1;
+    if (item.quality > 50) item.quality = 50
+    else if (item.quality < 0) item.quality = 0
   }
 
-  private increaseQuality(item: Item) {
-    if (item.quality < 50) item.quality += 1
-  }
+  private updateQuality(item: Item) { 
+    const isExpired = item.sellIn <= 0
+    const isConjured = item.name === 'Conjured Mana Cake'
 
-  private decreaseQuality(item: Item) {    
-    if (item.quality > 0) item.quality -= 1
-    if (item.sellIn <= 0 && item.quality > 0) item.quality -= 1
+    switch(item.name) {
+      case 'Backstage passes to a TAFKAL80ETC concert':
+        this.updateTicketQuality(item)
+        return
+      case 'Sulfuras, Hand of Ragnaros':
+        return
+      case 'Aged Brie':
+        this.changeQuality(item, +1)
+        return
+    }
+
+    const baseDecrease = -1
+
+    let decrease = isExpired? baseDecrease * 2 : baseDecrease
+    decrease *= isConjured? 2 : 1
+
+    this.changeQuality(item, decrease)
   }
 
   private updateTicketQuality(item: Item) {
+    // Ticket expired
     if (item.sellIn <= 0) { 
       item.quality = 0 
       return 
     }
+
+    // Quality reached the limit
     if (item.quality >= 50) return 
 
     item.quality = item.quality + 1
@@ -75,5 +81,12 @@ export class GildedRose {
       item.quality = item.quality + 1
     }
 
+  }
+
+  private updateSellInDays(item: Item) {
+    // Sulfuras is a legendary item that doesn't age
+    if (item.name == 'Sulfuras, Hand of Ragnaros') return
+
+    item.sellIn = item.sellIn - 1;
   }
 }

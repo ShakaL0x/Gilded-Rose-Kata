@@ -79,13 +79,13 @@ describe('Gilded Rose', () => {
     gildedRose.updateItems()
     
     const qualityAfterFirstUpdate = itemsFromGildedRose[0].quality
-    const qualityDecreaseByDayBeforeSell = items[0].quality - qualityAfterFirstUpdate
+    const qualityDecreaseByDayBeforeSellDay = items[0].quality - qualityAfterFirstUpdate
 
     gildedRose.updateItems()
 
     let qualityDecreaseByDayAfterSell = qualityAfterFirstUpdate - itemsFromGildedRose[0].quality
 
-    expect(qualityDecreaseByDayAfterSell).to.eq(qualityDecreaseByDayBeforeSell * 2)
+    expect(qualityDecreaseByDayAfterSell).to.eq(qualityDecreaseByDayBeforeSellDay * 2)
   })
 
   it('Quality of an item is in [0, 50] range, besides Sulfuras', () => {
@@ -246,4 +246,51 @@ describe('Gilded Rose', () => {
     
     expect(itemsFromGildedRose[0].quality).to.be.eq(items[0].quality + 1)
   })
+
+  /* ------ Aged Brie ------ */
+
+  it('"Aged Brie" increases in `Quality` by 2', () => {
+    const items = [
+      new Item("Aged Brie", -1, 0), //
+    ] //
+
+    const gildedRose = new GildedRose(clone(items)); // clones items to not pass references
+
+    const itemsFromGildedRose = gildedRose.items; // gets reference that updates on update()
+
+    gildedRose.updateItems()
+    
+    expect(itemsFromGildedRose[0].quality).to.be.eq(items[0].quality + 1)
+  })
+
+  /* ------ Conjured Mana Cake ------ */
+
+  it('"Conjured Mana Cake" quality decrease twice as fast', () => {
+    const items = [
+      new Item("Conjured Mana Cake", 1, 20), //
+    ] //
+
+    const gildedRose = new GildedRose(clone(items)); // clones items to not pass references
+
+    const itemsFromGildedRose = gildedRose.items; // gets reference that updates on update()
+
+    gildedRose.updateItems()
+    
+    expect(itemsFromGildedRose[0].quality).to.be.eq(18)
+  
+    expect(itemsFromGildedRose[0].sellIn).to.be.eq(0)
+    
+    gildedRose.updateItems()
+  
+    expect(itemsFromGildedRose[0].sellIn).to.be.eq(-1)
+    
+    expect(itemsFromGildedRose[0].quality).to.be.eq(14)
+
+    gildedRose.updateItems()
+
+    expect(itemsFromGildedRose[0].sellIn).to.be.eq(-2)
+    
+    expect(itemsFromGildedRose[0].quality).to.be.eq(10)
+  })
+
 });
