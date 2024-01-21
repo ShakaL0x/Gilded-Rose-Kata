@@ -26,33 +26,31 @@ export class GildedRose {
   }
 
   private updateItem(item: Item) {
-    if (
-      item.name == 'Aged Brie' ||
-      item.name == 'Backstage passes to a TAFKAL80ETC concert' ||
-      item.name == 'Sulfuras, Hand of Ragnaros'
-    ) {
-      // Increase +1 and does ticket handling
-      
-      if (item.quality < 50) {
-        if (item.name == 'Backstage passes to a TAFKAL80ETC concert') {
-          this.increaseTicketQuality(item)
-        } else {
-          this.increaseQuality(item)
-        }
-      }
-    } else {
-      this.decreaseQuality(item)
+    switch(item.name) {
+      case 'Aged Brie':
+        this.increaseQuality(item)
+        break
+      case 'Backstage passes to a TAFKAL80ETC concert':
+        this.increaseTicketQuality(item)
+        break
+      case 'Sulfuras, Hand of Ragnaros':
+        break
+      default:
+        this.decreaseQuality(item)
     }
 
     this.updateSellInDays(item)
+    
+    if (item.sellIn >= 0) return
 
-    if (item.sellIn < 0) {
-      // Ticket expiry
-      if (item.name == 'Backstage passes to a TAFKAL80ETC concert') {
+    switch (item.name) {
+      case 'Backstage passes to a TAFKAL80ETC concert':
+        // Ticket expiry
         item.quality = 0
-      }
-
-      this.decreaseQuality(item)
+        break
+      default:
+        this.decreaseQuality(item)
+        break
     }
   }
 
@@ -70,9 +68,7 @@ export class GildedRose {
   private decreaseQuality(item: Item) {
     if (item.name === 'Aged Brie') return
     if (item.name === 'Sulfuras, Hand of Ragnaros') return
-    if (item.name === 'Backstage passes to a TAFKAL80ETC concert') return
     
-    if (item.quality == 0) return
     if (item.quality > 0) item.quality -= 1
   }
 
