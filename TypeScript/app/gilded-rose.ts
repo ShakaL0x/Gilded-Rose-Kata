@@ -30,44 +30,40 @@ export class GildedRose {
     this.updateSellInDays(item)
   }
 
+  // Wraps all quality parameter updates
   private updateQuality(item: Item) { 
-    const isExpired = item.sellIn <= 0
-    const isConjured = item.name === 'Conjured Mana Cake'
-
-    switch(item.name) {
-      case 'Backstage passes to a TAFKAL80ETC concert':
-        this.updateTicketQuality(item)
-        return
-      case 'Sulfuras, Hand of Ragnaros':
-        return
-      case 'Aged Brie':
-        this.changeQuality(item, +1)
-        return
-    }
-
-    const baseDecrease = -1
-
-    let decrease = isExpired? baseDecrease * 2 : baseDecrease
-    decrease *= isConjured? 2 : 1
-
-    this.changeQuality(item, decrease)
-  }
-
-  private updateTicketQuality(item: Item) {
-    let change = +1
+    let standardChange = -1
+    let change = standardChange
     
-    // Ticket expired
-    if (item.sellIn <= 0) change = -item.quality
-    // Concert is very close
-    else if (item.sellIn <= 5) change = +3
-    // Concert is close
-    else if (item.sellIn <= 10) change = +2
+    if      (item.name === 'Backstage passes to a TAFKAL80ETC concert') change = this.getTicketQualityChange(item)
+    else if (item.name === 'Sulfuras, Hand of Ragnaros') return
+    else if (item.name === 'Aged Brie') change = +1
+    else    {
+      const isExpired = item.sellIn <= 0
+      const isConjured = item.name === 'Conjured Mana Cake'
+  
+      let decrease = isExpired? standardChange * 2 : standardChange
+      decrease *= isConjured? 2 : 1
+  
+      change = decrease
+    }
 
     this.changeQuality(item, change)
   }
 
-  // Quality update protected from overflows/underflows
-  private changeQuality(item: Item, change: number) {    
+  private getTicketQualityChange(item: Item) {
+    // Concert passed
+    if (item.sellIn <= 0) return -item.quality
+    // Concert is very close
+    else if (item.sellIn <= 5) return +3
+    // Concert is close
+    else if (item.sellIn <= 10) return +2
+    
+    return +1
+  }
+
+  // Updates quality with overflow/underflow protection
+  private changeQuality(item: Item, change: number) {
     item.quality += change
 
     // Overflow/underflow protection
